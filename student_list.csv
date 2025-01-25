@@ -1,8 +1,8 @@
-Student A, creative 
-Student B, leader 
-Student C, creative 
-Student D, organizer 
-Student E, leader 
-Student F, creative 
-Student G, creative 
-Student H, organizer 
+Student A, creative, no
+Student B, leader, no
+Student C, creative, yes
+Student D, organizer, no
+Student E, leader, yes
+Student F, creative, no
+Student G, creative, yes
+Student H, leader, yes
