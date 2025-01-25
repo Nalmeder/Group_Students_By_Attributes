@@ -1,13 +1,10 @@
 import random
 
 class Student:
-    def __init__(self, name, set, had_before):
+    def __init__(self, name, set):
         self.name = name
         self.set = set  # 'creative', 'leader', 'organizer'
-        self.had_before = had_before  # True or False
 
-    def __str__(self):
-        return f"{self.name} ({self.set}, {'Had before' if self.had_before else 'New'})"
 
 def create_list_of_students():
     list_of_students = []
@@ -17,7 +14,7 @@ def create_list_of_students():
             if line[-1][-1] == '\n':
                 line[-1] = line[-1].rstrip(' \n')
             list_of_students.append(
-                Student(name=line[0], set=line[1], had_before=line[2] == '1')
+                Student(name=line[0], set=line[1])
             )
     return list_of_students
 
@@ -47,33 +44,70 @@ def create_balanced_groups(students):
     leftovers = creatives + leaders + organizers
     return groups, leftovers
 
-def adjust_groups_based_on_max_set(groups, leftovers):
-    # Determine which set has the most students
-    role_counts = {
-        'creative': sum(1 for student in leftovers if student.set == 'creative'),
-        'leader': sum(1 for student in leftovers if student.set == 'leader'),
-        'organizer': sum(1 for student in leftovers if student.set == 'organizer')
-    }
+def count_roles(leftovers):
+    # Count the number of students in each role
+    creative_count = 0
+    leader_count = 0
+    organizer_count = 0
 
+    for student in leftovers:
+        if student.set == 'creative':
+            creative_count += 1
+        elif student.set == 'leader':
+            leader_count += 1
+        elif student.set == 'organizer':
+            organizer_count += 1
+
+    return creative_count, leader_count, organizer_count
+
+def determine_max_role(creative_count, leader_count, organizer_count):
     # Identify the set with the most students
-    max_role = max(role_counts, key=role_counts.get)
+    role_counts = {
+        'creative': creative_count,
+        'leader': leader_count,
+        'organizer': organizer_count
+    }
     
-    # Adjust groups based on the max_role
-    print(f"Adjusting groups based on the most abundant role: {max_role}")
+    # Find the role with the highest count
+    max_role = None
+    max_count = -1
+    for role, count in role_counts.items():
+        if count > max_count:
+            max_role = role
+            max_count = count
     
+    return max_role
+
+def find_max_role_students(leftovers, max_role):
     # Find students of the max_role in the leftovers
-    max_role_students = [student for student in leftovers if student.set == max_role]
+    max_role_students = []
+    for student in leftovers:
+        if student.set == max_role:
+            max_role_students.append(student)
     
+    return max_role_students
+
+def check_group_for_role(group, max_role):
+    # Check if a group already has a student from the max_role
+    role_found = False
+    for student in group:
+        if student.set == max_role:
+            role_found = True
+            break
+    return role_found
+
+def move_students_to_groups(groups, max_role_students, leftovers, max_role):
     # Move students from leftovers to groups to balance the roles
     for student in max_role_students:
-        # Find a group that doesn't have a student from max_role yet
+        # Try to find a group that doesn't have the max_role
         for group in groups:
-            if len(group) < 4 and not any(s.set == max_role for s in group):
-                group.append(student)
-                leftovers.remove(student)
-                break
+            if len(group) < 4:
+                role_found = check_group_for_role(group, max_role)
+                if not role_found:
+                    group.append(student)
+                    leftovers.remove(student)
+                    break
 
-    return groups, leftovers
 
 def adjust_groups_for_leftovers(groups, leftovers):
     while len(leftovers) >= 3:
@@ -93,6 +127,7 @@ def adjust_groups_for_leftovers(groups, leftovers):
                     break  # Exit once replacement is done
 
     return groups, leftovers
+
 
 def assign_leftovers_to_groups(groups, leftovers):
     if leftovers:
@@ -136,6 +171,23 @@ def display_groups(groups, leftovers):
         for student in leftovers:
             print(f"  - {student.name} {student.set}")
         print()
+
+
+def adjust_groups_based_on_max_set(groups, leftovers):
+    # Count the roles
+    creative_count, leader_count, organizer_count = count_roles(leftovers)
+    
+    # Determine the role with the most students
+    max_role = determine_max_role(creative_count, leader_count, organizer_count)
+    
+    # Find students of the max_role
+    max_role_students = find_max_role_students(leftovers, max_role)
+    
+    # Move students to groups
+    move_students_to_groups(groups, max_role_students, leftovers, max_role)
+    
+    return groups, leftovers
+
 
 def main():
     students = create_list_of_students()
