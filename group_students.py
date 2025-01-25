@@ -47,6 +47,34 @@ def create_balanced_groups(students):
     leftovers = creatives + leaders + organizers
     return groups, leftovers
 
+def adjust_groups_based_on_max_set(groups, leftovers):
+    # Determine which set has the most students
+    role_counts = {
+        'creative': sum(1 for student in leftovers if student.set == 'creative'),
+        'leader': sum(1 for student in leftovers if student.set == 'leader'),
+        'organizer': sum(1 for student in leftovers if student.set == 'organizer')
+    }
+
+    # Identify the set with the most students
+    max_role = max(role_counts, key=role_counts.get)
+    
+    # Adjust groups based on the max_role
+    print(f"Adjusting groups based on the most abundant role: {max_role}")
+    
+    # Find students of the max_role in the leftovers
+    max_role_students = [student for student in leftovers if student.set == max_role]
+    
+    # Move students from leftovers to groups to balance the roles
+    for student in max_role_students:
+        # Find a group that doesn't have a student from max_role yet
+        for group in groups:
+            if len(group) < 4 and not any(s.set == max_role for s in group):
+                group.append(student)
+                leftovers.remove(student)
+                break
+
+    return groups, leftovers
+
 def adjust_groups_for_leftovers(groups, leftovers):
     while len(leftovers) >= 3:
         # Form a new group with 3 students
@@ -58,14 +86,13 @@ def adjust_groups_for_leftovers(groups, leftovers):
         if len(group) == 3 and leftovers:
             for i, student in enumerate(group):
                 if student.set in ['leader', 'organizer'] and leftovers:
-                    # Swap leader/organizer with a creative
+                    # Swap less abundant roll with most abundant
                     replaced_student = group[i]
                     group[i] = leftovers.pop()
                     leftovers.append(replaced_student)
                     break  # Exit once replacement is done
 
     return groups, leftovers
-
 
 def assign_leftovers_to_groups(groups, leftovers):
     if leftovers:
@@ -92,7 +119,6 @@ def assign_leftovers_to_groups(groups, leftovers):
 def filter_leftovers(leftovers, filter_list):
     # Iterate over copy to avoid weirdness when removing
     for student in leftovers.copy():
-        print(student.name)
         if student in filter_list:
             leftovers.remove(student)
 
@@ -117,7 +143,10 @@ def main():
     # Create groups and handle leftovers
     groups, leftovers = create_balanced_groups(students)
 
-    # Adjust groups for leftovers, making sure groups are balanced with 3 students
+    # Adjust groups based on the most abundant set in leftovers
+    groups, leftovers = adjust_groups_based_on_max_set(groups, leftovers)
+
+    # Adjust groups for any remaining leftovers, ensuring balance
     groups, leftovers = adjust_groups_for_leftovers(groups, leftovers)
 
     # Assign the leftovers to groups
